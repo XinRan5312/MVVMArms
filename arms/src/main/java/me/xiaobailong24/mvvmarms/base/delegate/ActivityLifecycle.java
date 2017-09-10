@@ -2,12 +2,9 @@ package me.xiaobailong24.mvvmarms.base.delegate;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
-import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +41,7 @@ public class ActivityLifecycle implements Application.ActivityLifecycleCallbacks
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         Timber.w(activity + " ---> onActivityCreated");
 
-        //如果intent包含了此字段,并且为true说明不加入到list
-        // 默认为false,如果不需要管理(比如不需要在退出所有activity(killAll)时，退出此activity就在intent加此字段为true)
+        //如果 intent 包含了此字段,并且为 true 说明不加入到 list 进行统一管理
         boolean isNotAdd = false;
         if (activity.getIntent() != null)
             isNotAdd = activity.getIntent().getBooleanExtra(AppManager.IS_NOT_ADD_ACTIVITY_LIST, false);
@@ -63,10 +59,7 @@ public class ActivityLifecycle implements Application.ActivityLifecycleCallbacks
             activityDelegate.onCreate(savedInstanceState);
         }
 
-        /**
-         * 给每个Activity配置Fragment的监听,Activity可以通过 {@link IActivity#useFragment()} 设置是否使用监听
-         * 如果这个Activity返回false的话,这个Activity将不能使用{@link FragmentDelegate},意味着 {@link com.jess.arms.base.BaseFragment}也不能使用
-         */
+        // 给每个Activity配置Fragment的监听,Activity可以通过 {@link IActivity#useFragment()} 设置是否使用监听
         boolean useFragment = !(activity instanceof IActivity) || ((IActivity) activity).useFragment();
         if (activity instanceof FragmentActivity && useFragment) {
 
@@ -78,6 +71,7 @@ public class ActivityLifecycle implements Application.ActivityLifecycleCallbacks
 
             if (mFragmentLifecycles == null && mExtras.containsKey(ConfigModule.class.getName())) {
                 mFragmentLifecycles = new ArrayList<>();
+                @SuppressWarnings("unchecked")
                 List<ConfigModule> modules = (List<ConfigModule>) mExtras.get(ConfigModule.class.getName());
                 for (ConfigModule module : modules) {
                     module.injectFragmentLifecycle(mApplication, mFragmentLifecycles);
@@ -162,148 +156,6 @@ public class ActivityLifecycle implements Application.ActivityLifecycleCallbacks
             activityDelegate = activity.getIntent().getParcelableExtra(ActivityDelegate.ACTIVITY_DELEGATE);
         }
         return activityDelegate;
-    }
-
-
-    /**
-     * Fragment 生命周期回调。
-     * 在 Fragment 对应生命周期方法执行完毕后进行的。
-     */
-    private static class FragmentLifecycle extends FragmentManager.FragmentLifecycleCallbacks {
-
-        @Override
-        public void onFragmentAttached(FragmentManager fm, Fragment f, Context context) {
-            super.onFragmentAttached(fm, f, context);
-            if (f instanceof IFragment && f.getArguments() != null) {
-                Timber.i(f.toString() + " ---> onFragmentAttached");
-                FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-                if (fragmentDelegate == null || !fragmentDelegate.isAdded()) {
-                    fragmentDelegate = new FragmentDelegateImpl(fm, f);
-                    f.getArguments().putParcelable(FragmentDelegate.FRAGMENT_DELEGATE, fragmentDelegate);
-                }
-                fragmentDelegate.onAttach(context);
-            }
-        }
-
-        @Override
-        public void onFragmentCreated(FragmentManager fm, Fragment f, Bundle savedInstanceState) {
-            super.onFragmentCreated(fm, f, savedInstanceState);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentCreated");
-                fragmentDelegate.onCreate(savedInstanceState);
-            }
-        }
-
-        @Override
-        public void onFragmentViewCreated(FragmentManager fm, Fragment f, View v, Bundle savedInstanceState) {
-            super.onFragmentViewCreated(fm, f, v, savedInstanceState);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentViewCreated");
-                fragmentDelegate.onCreateView(v, savedInstanceState);
-            }
-        }
-
-        @Override
-        public void onFragmentActivityCreated(FragmentManager fm, Fragment f, Bundle savedInstanceState) {
-            super.onFragmentActivityCreated(fm, f, savedInstanceState);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentActivityCreated");
-                fragmentDelegate.onActivityCreate(savedInstanceState);
-            }
-        }
-
-        @Override
-        public void onFragmentStarted(FragmentManager fm, Fragment f) {
-            super.onFragmentStarted(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentStarted");
-                fragmentDelegate.onStart();
-            }
-        }
-
-        @Override
-        public void onFragmentResumed(FragmentManager fm, Fragment f) {
-            super.onFragmentResumed(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentResumed");
-                fragmentDelegate.onResume();
-            }
-        }
-
-        @Override
-        public void onFragmentPaused(FragmentManager fm, Fragment f) {
-            super.onFragmentPaused(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentPaused");
-                fragmentDelegate.onPause();
-            }
-        }
-
-        @Override
-        public void onFragmentStopped(FragmentManager fm, Fragment f) {
-            super.onFragmentStopped(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentStopped");
-                fragmentDelegate.onStop();
-            }
-        }
-
-        @Override
-        public void onFragmentSaveInstanceState(FragmentManager fm, Fragment f, Bundle outState) {
-            super.onFragmentSaveInstanceState(fm, f, outState);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentSaveInstanceState");
-                fragmentDelegate.onSaveInstanceState(outState);
-            }
-        }
-
-        @Override
-        public void onFragmentViewDestroyed(FragmentManager fm, Fragment f) {
-            super.onFragmentViewDestroyed(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentViewDestroyed");
-                fragmentDelegate.onDestroyView();
-            }
-        }
-
-        @Override
-        public void onFragmentDestroyed(FragmentManager fm, Fragment f) {
-            super.onFragmentDestroyed(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentDestroyed");
-                fragmentDelegate.onDestroy();
-            }
-        }
-
-        @Override
-        public void onFragmentDetached(FragmentManager fm, Fragment f) {
-            super.onFragmentDetached(fm, f);
-            FragmentDelegate fragmentDelegate = fetchFragmentDelegate(f);
-            if (fragmentDelegate != null) {
-                Timber.i(f.toString() + " ---> onFragmentDetached");
-                fragmentDelegate.onDetach();
-                f.getArguments().clear();
-            }
-        }
-
-        private FragmentDelegate fetchFragmentDelegate(Fragment fragment) {
-            if (fragment instanceof IFragment) {
-                return fragment.getArguments() == null
-                        ? null
-                        : (fragment.getArguments().getParcelable(FragmentDelegate.FRAGMENT_DELEGATE));
-            }
-            return null;
-        }
     }
 
 }

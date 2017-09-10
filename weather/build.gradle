@@ -32,7 +32,7 @@ android {
         debug {
             buildConfigField "boolean", "LOG_DEBUG", "true"
             buildConfigField "boolean", "USE_CANARY", "true"
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
@@ -61,10 +61,7 @@ dependencies {
     //view
     implementation rootProject.ext.dependencies["constraint-layout"]
     implementation rootProject.ext.dependencies["SuperTextView"]
-    implementation(rootProject.ext.dependencies["MaterialSearchView"]) {
-        exclude module: 'appcompat-v7'
-        exclude module: 'design'
-    }
+    implementation rootProject.ext.dependencies["MaterialSearchView"]
 
     //mvvm(Lifecycles, LiveData, and ViewModel, Room)
     annotationProcessor rootProject.ext.dependencies["lifecycle-compiler"]
@@ -77,7 +74,9 @@ dependencies {
 
     //tools
     compileOnly rootProject.ext.dependencies["javax.annotation"]
-    annotationProcessor rootProject.ext.dependencies["dagger2-compiler"]
+    annotationProcessor(rootProject.ext.dependencies["dagger2-compiler"]) {
+        exclude module: 'js305'
+    }
     annotationProcessor(rootProject.ext.dependencies["dagger2-android-processor"]) {
         exclude module: 'jsr305'
     }

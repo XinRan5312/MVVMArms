@@ -5,12 +5,12 @@ ext {
             buildToolsVersion: "26.0.1",
             minSdkVersion    : 15,
             targetSdkVersion : 26,
-            versionCode      : 1,
-            versionName      : "1.0.0-beta"
+            versionCode      : 2,
+            versionName      : "1.0.0-beta2"
     ]
 
     version = [
-            androidSupportSdkVersion: "26.0.1",
+            androidSupportSdkVersion: "26.0.2",
             androidArchSdkVersion   : "1.0.0-alpha9",
             retrofitSdkVersion      : "2.3.0",
             glideSdkVersion         : "4.0.0",
@@ -31,7 +31,7 @@ ext {
 
             //view
             "brvah"                    : "com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.28",
-            "SuperTextView"            : "com.github.lygttpod:SuperTextView:2.1.3",
+            "SuperTextView"            : "com.github.lygttpod:SuperTextView:2.1.4",
             "MaterialSearchView"       : "com.miguelcatalan:materialsearchview:1.4.0",
 
             //mvvm( Lifecycles, LiveData, and ViewModel, Room)
