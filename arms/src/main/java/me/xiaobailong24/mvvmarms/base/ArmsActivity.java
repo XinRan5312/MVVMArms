@@ -1,21 +1,15 @@
 package me.xiaobailong24.mvvmarms.base;
 
 import android.arch.lifecycle.LifecycleObserver;
-import android.arch.lifecycle.LifecycleRegistry;
-import android.arch.lifecycle.LifecycleRegistryOwner;
 import android.arch.lifecycle.ViewModelProvider;
 import android.databinding.DataBindingUtil;
 import android.databinding.ViewDataBinding;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 
 import javax.inject.Inject;
 
-import dagger.android.AndroidInjector;
-import dagger.android.DispatchingAndroidInjector;
-import dagger.android.support.HasSupportFragmentInjector;
 import me.xiaobailong24.mvvmarms.base.delegate.IActivity;
 import me.xiaobailong24.mvvmarms.mvvm.IViewModel;
 
@@ -24,15 +18,8 @@ import me.xiaobailong24.mvvmarms.mvvm.IViewModel;
  * MVVM ArmsActivity
  */
 public abstract class ArmsActivity<DB extends ViewDataBinding, VM extends IViewModel>
-        extends AppCompatActivity implements IActivity, LifecycleRegistryOwner, HasSupportFragmentInjector {
+        extends AppCompatActivity implements IActivity {
     protected final String TAG = this.getClass().getName();
-
-    //LifecycleOwner
-    private LifecycleRegistry mLifecycleRegistry = new LifecycleRegistry(this);
-
-    //Dagger.Android SupportFragment Inject
-    @Inject
-    DispatchingAndroidInjector<Fragment> mFragmentInjector;
 
     //DataBinding
     protected DB mBinding;
@@ -64,26 +51,23 @@ public abstract class ArmsActivity<DB extends ViewDataBinding, VM extends IViewM
         return true;
     }
 
+    @SuppressWarnings("all")
     @Override
-    public LifecycleRegistry getLifecycle() {
-        return this.mLifecycleRegistry;//LifecycleOwner
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        /**
+         * 新姿势：通过ViewModel保存数据。
+         *  @see <a href="https://developer.android.com/topic/libraries/architecture/viewmodel.html#viewmodel_vs_savedinstancestate">ViewModel vs SavedInstanceState</a>
+         */
     }
-
-    @Override
-    public AndroidInjector<Fragment> supportFragmentInjector() {
-        return this.mFragmentInjector;//Dagger.Android SupportFragment Inject
-    }
-
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         this.mBinding = null;
         this.mViewModelFactory = null;
-        this.mFragmentInjector = null;
-        if (mLifecycleRegistry != null && mViewModel != null)//移除LifecycleObserver
-            mLifecycleRegistry.removeObserver((LifecycleObserver) mViewModel);
-        this.mLifecycleRegistry = null;
+        if (getLifecycle() != null && mViewModel != null)//移除LifecycleObserver
+            getLifecycle().removeObserver((LifecycleObserver) mViewModel);
         this.mViewModel = null;
     }
 }

@@ -15,10 +15,10 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.schedulers.Schedulers;
-import me.jessyan.rxerrorhandler.core.RxErrorHandler;
 import me.jessyan.rxerrorhandler.handler.ErrorHandleSubscriber;
 import me.xiaobailong24.mvvmarms.di.scope.AppScope;
 import me.xiaobailong24.mvvmarms.mvvm.BaseViewModel;
+import me.xiaobailong24.mvvmarms.utils.ArmsUtils;
 import me.xiaobailong24.mvvmarms.weather.mvvm.model.WeatherModel;
 import me.xiaobailong24.mvvmarms.weather.mvvm.model.entry.Location;
 import timber.log.Timber;
@@ -29,14 +29,12 @@ import timber.log.Timber;
  */
 @AppScope
 public class WeatherViewModel extends BaseViewModel<WeatherModel> {
-    private RxErrorHandler mRxErrorHandler;
     private MutableLiveData<List<String>> mLocationPaths;
+    private MutableLiveData<String> mLocation;//可以与 Fragment 共享此数据
 
     @Inject
-    public WeatherViewModel(Application application, WeatherModel model,
-                            RxErrorHandler rxErrorHandler) {
+    public WeatherViewModel(Application application, WeatherModel model) {
         super(application, model);
-        this.mRxErrorHandler = rxErrorHandler;
     }
 
     //获取储存的位置记录
@@ -59,7 +57,8 @@ public class WeatherViewModel extends BaseViewModel<WeatherModel> {
                     }
                     return locationPaths;
                 })
-                .subscribe(new ErrorHandleSubscriber<List<String>>(mRxErrorHandler) {
+                .subscribe(new ErrorHandleSubscriber<List<String>>
+                        (ArmsUtils.INSTANCE.obtainArmsComponent(getApplication()).rxErrorHandler()) {
                     @Override
                     public void onSubscribe(@NonNull Disposable d) {
                         super.onSubscribe(d);
@@ -73,10 +72,19 @@ public class WeatherViewModel extends BaseViewModel<WeatherModel> {
                 });
     }
 
+    public MutableLiveData<String> getLocation() {
+        if (mLocation == null) {
+            mLocation = new MutableLiveData<>();
+            mLocation.setValue("北京");
+        }
+        return mLocation;
+    }
+
     @Override
     public void onCleared() {
         super.onCleared();
         this.mLocationPaths = null;
+        this.mLocation = null;
     }
 
 }

@@ -3,7 +3,7 @@ package me.xiaobailong24.mvvmarms.weather.di.component;
 import dagger.Subcomponent;
 import dagger.android.AndroidInjector;
 import me.xiaobailong24.mvvmarms.di.scope.ActivityScope;
-import me.xiaobailong24.mvvmarms.weather.di.module.WeatherActivityModule;
+import me.xiaobailong24.mvvmarms.weather.di.module.WeatherModule;
 import me.xiaobailong24.mvvmarms.weather.mvvm.view.activity.WeatherActivity;
 
 /**
@@ -11,10 +11,10 @@ import me.xiaobailong24.mvvmarms.weather.mvvm.view.activity.WeatherActivity;
  * Dagger WeatherActivitySubcomponent
  */
 @ActivityScope
-@Subcomponent(modules = WeatherActivityModule.class)
+@Subcomponent(modules = WeatherModule.class)///DataModule
 public interface WeatherActivitySubcomponent extends AndroidInjector<WeatherActivity> {
 
     @Subcomponent.Builder
-    public abstract class Builder extends AndroidInjector.Builder<WeatherActivity> {
+    abstract class Builder extends AndroidInjector.Builder<WeatherActivity> {
     }
 }

@@ -1,27 +1,22 @@
 package me.xiaobailong24.mvvmarms.weather.mvvm.view.fragment;
 
-import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.ViewModelProviders;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
-import android.os.Message;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.List;
+import javax.inject.Inject;
 
 import me.xiaobailong24.mvvmarms.base.ArmsFragment;
 import me.xiaobailong24.mvvmarms.weather.R;
-import me.xiaobailong24.mvvmarms.weather.app.EventBusTags;
 import me.xiaobailong24.mvvmarms.weather.databinding.FragmentWeatherNowBinding;
 import me.xiaobailong24.mvvmarms.weather.mvvm.model.api.Api;
-import me.xiaobailong24.mvvmarms.weather.mvvm.model.pojo.TextContent;
 import me.xiaobailong24.mvvmarms.weather.mvvm.view.adapter.TextContentAdapter;
 import me.xiaobailong24.mvvmarms.weather.mvvm.viewmodel.WeatherNowViewModel;
-import timber.log.Timber;
-
+import me.xiaobailong24.mvvmarms.weather.mvvm.viewmodel.WeatherViewModel;
 
 /**
  * Created by xiaobailong24 on 2017/7/15.
@@ -31,8 +26,8 @@ import timber.log.Timber;
 public class WeatherNowFragment extends ArmsFragment<FragmentWeatherNowBinding, WeatherNowViewModel> {
 
     private TextContentAdapter mAdapter;
-    private LiveData<List<TextContent>> mWeatherNowData;
-    private String mLocation;
+    @Inject
+    WeatherViewModel mWeatherViewModel;//共享 Activity 数据
 
     public static WeatherNowFragment newInstance(String location) {
         WeatherNowFragment weatherNowFragment = new WeatherNowFragment();
@@ -41,7 +36,6 @@ public class WeatherNowFragment extends ArmsFragment<FragmentWeatherNowBinding, 
         weatherNowFragment.setArguments(args);
         return weatherNowFragment;
     }
-
 
     @Override
     public View initView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -56,75 +50,53 @@ public class WeatherNowFragment extends ArmsFragment<FragmentWeatherNowBinding, 
                 ContextCompat.getColor(getContext(), R.color.colorPrimary),
                 ContextCompat.getColor(getContext(), R.color.colorAccent),
                 ContextCompat.getColor(getContext(), R.color.colorPrimaryDark));
-
         return mBinding.getRoot();
     }
 
     @Override
     public void initData(Bundle savedInstanceState) {
-        if (savedInstanceState == null)
-            mLocation = getArguments().getString(Api.API_KEY_LOCATION);
+        //懒加载：onFragmentVisibleChange().
+        mWeatherViewModel.getLocation().observe(getActivity(), s -> {
+            mFirst = true;//位置变化时，需要重新加载
+            if (mVisible)
+                onFragmentVisibleChange(true);
+        });
     }
 
+    @SuppressWarnings("all")
     @Override
     public void setData(Object data) {
-        Message message = (Message) data;
-        Timber.i("setData: message.what--->" + message.what +
-                ", message.obj--->" + message.obj);
-        switch (message.what) {
-            case EventBusTags.FRAGMENT_MESSAGE_WEATHER_NOW:
-                mLocation = String.valueOf(message.obj);
-                break;
-            default:
-                break;
-        }
+        /**
+         * 可以在Activity中调用该接口，实现Activity与Fragment通信。建议 data 传递 {@link android.os.Message}；
+         * 这样就可以根据 message.what 判断接收消息。
+         * 但是：
+         * 新姿势：可以通过 Activity 的 ViewModel 共享数据给包含的 Fragment，配合 LiveData 好用到爆。
+         *  @see <a href="https://developer.android.com/topic/libraries/architecture/viewmodel.html#sharing_data_between_fragments">Sharing Data Between Fragments</a>
+         */
     }
 
-    //调用ViewModel的方法获取天气
     @SuppressWarnings("all")
-    private void observerWeatherNow(String location) {
-        if (mWeatherNowData != null)//防止重复订阅
-            mWeatherNowData.removeObservers(this);
-        //如果位置是全路径，则截取城市名
-        if (location.contains(","))
-            location = location.substring(0, location.indexOf(","));
-        if (mViewModel != null) {
-            mWeatherNowData = mViewModel.getWeatherNow(location);
-            mWeatherNowData.observe(this, textContents -> {
-                mAdapter.replaceData(textContents);
-                // TODO: 2017/8/19
-                //            DiffUtil.DiffResult diffResult =
-                //                    DiffUtil.calculateDiff(new RecyclerViewDiffCallback<>(mAdapter.getData(), textContents), true);
-                //            diffResult.dispatchUpdatesTo(mAdapter);
-            });
-        }
-    }
-
     @Override
-    public void onResume() {
-        super.onResume();
-        if (mViewModel != null && mWeatherNowData == null) {
-            observerWeatherNow(mLocation);
-        }
-    }
-
-    @Override
-    public void onHiddenChanged(boolean hidden) {
-        //当Fragment显示/隐藏变化时执行该方法，根据是否显示Fragment加载数据
-        super.onHiddenChanged(hidden);
-        if (!hidden)
-            observerWeatherNow(mLocation);
-        else {
-            if (mWeatherNowData != null)//防止重复订阅
-                mWeatherNowData.removeObservers(this);
+    protected void onFragmentVisibleChange(boolean isVisible) {
+        //当 Fragment 显示/隐藏变化时执行该方法，根据是否显示 Fragment 加载数据
+        super.onFragmentVisibleChange(isVisible);
+        if (mViewModel != null && isVisible) {
+            //调用ViewModel的方法获取天气
+            mViewModel.getWeatherNow(mWeatherViewModel.getLocation().getValue())
+                    .observe(WeatherNowFragment.this, dailies -> {
+                        mAdapter.replaceData(dailies);
+                        mFirst = false;//加载完成
+                        // TODO: 2017/8/19
+                        //            DiffUtil.DiffResult diffResult = DiffUtil
+                        //                    .calculateDiff(new RecyclerViewDiffCallback<>(mAdapter.getData(), dailies));
+                        //            diffResult.dispatchUpdatesTo(mAdapter);
+                    });
         }
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        this.mWeatherNowData = null;
         this.mAdapter = null;
-        this.mLocation = null;
     }
 }
