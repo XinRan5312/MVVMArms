@@ -42,6 +42,8 @@ public class WeatherDailyFragment extends ArmsFragment<FragmentWeatherDailyBindi
         mViewModel = ViewModelProviders.of(this, mViewModelFactory).get(WeatherDailyViewModel.class);
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_weather_daily, container, false);
         mBinding.setViewModel(mViewModel);//设置ViewModel
+        mBinding.retry.setViewModel(mViewModel);
+        mBinding.weatherSource.setViewModel(mViewModel);
         //RecyclerView设置Adapter
         mAdapter = new WeatherDailyAdapter(R.layout.super_item_daily, null);
         mBinding.recyclerWeatherDaily.setAdapter(mAdapter);

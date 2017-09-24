@@ -57,7 +57,6 @@ dependencies {
     //arms
     implementation project(':arms')
 
-
     //view
     implementation rootProject.ext.dependencies["constraint-layout"]
     implementation rootProject.ext.dependencies["SuperTextView"]

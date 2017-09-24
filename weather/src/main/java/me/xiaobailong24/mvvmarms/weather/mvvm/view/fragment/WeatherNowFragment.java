@@ -42,6 +42,8 @@ public class WeatherNowFragment extends ArmsFragment<FragmentWeatherNowBinding, 
         mViewModel = ViewModelProviders.of(this, mViewModelFactory).get(WeatherNowViewModel.class);
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_weather_now, container, false);
         mBinding.setViewModel(mViewModel);//设置ViewModel
+        mBinding.retry.setViewModel(mViewModel);
+        mBinding.weatherSource.setViewModel(mViewModel);
         //RecyclerView设置Adapter
         mAdapter = new TextContentAdapter(R.layout.super_text_item, null);
         mBinding.recyclerWeatherNow.setAdapter(mAdapter);
